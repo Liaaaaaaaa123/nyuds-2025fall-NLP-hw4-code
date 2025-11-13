@@ -1,0 +1,188 @@
+\documentclass{article}
+
+\input{header}
+
+\title{DSGA 1011: Assignment 4}
+
+\author{Full Name \\ Net ID}
+
+\date{}
+
+
+\colmfinalcopy
+\begin{document}
+\maketitle
+% \section*{Part I. Q1} No written element, submit \texttt{out\_original.txt}  to autograder.
+\section*{Q0. 1.}
+Please provide a link to your github repository, which contains the code for both Part I and Part II. \textcolor{gray}{TODO}
+\section*{Q2. 1.}
+\textbf{Transformation description.}
+We design a \emph{synonym-based lexical transformation} on the IMDB test set. 
+For each review, we first tokenize the text using NLTK’s \texttt{word\_tokenize}. 
+Then we iterate over the tokens and, with a small probability (we used at most 1--2 tokens per example), 
+we try to replace the current token by one of its WordNet synonyms.
+
+Concretely, for a token $w$:
+\begin{enumerate}
+    \item we query \texttt{wordnet.synsets(w)};
+    \item we collect all lemma names from these synsets and remove lemma names that are identical to $w$ (case-insensitive);
+    \item if at least one different lemma exists, we uniformly sample one synonym and use it to replace $w$ in the original text;
+    \item finally, we detokenize the token sequence back into text using \texttt{TreebankWordDetokenizer}.
+\end{enumerate}
+
+This transformation is \emph{reasonable} because synonym substitution preserves the semantic meaning and sentiment polarity of the original review while altering its surface form. 
+Such lexical variations frequently appear in real-world user text (e.g., ``movie'' vs. ``film'', ``excellent'' vs. ``superb''), 
+making it a realistic out-of-distribution (OOD) shift for sentiment classification.
+
+\textcolor{gray}{TODO}
+% \section*{Part I. Q2. 2. No written element, submit \texttt{out\_transformed.txt} to autograder. }
+\section*{Q3. 1}
+\textbf{Report \& Analysis}
+    \begin{itemize}
+        \item \textbf{Reported accuracy:}
+        \begin{itemize}
+            \item Original model (no augmentation), original test: \textbf{0.92932}
+            \item Original model (no augmentation), transformed test: \textbf{0.9268}
+            \item Augmented model, original test: \textbf{0.92368}
+            \item Augmented model, transformed test: \textbf{0.92068}
+        \end{itemize}
+
+        \item \textbf{Performance comparison:}
+        After applying data augmentation, the model’s performance on the transformed (OOD) test set remained stable (\(0.92068\) vs. \(0.9268\)), showing that the synonym-based augmentation slightly improved robustness to lexical variation. However, accuracy on the original test set decreased marginally (\(0.92368\) vs. \(0.92932\)), indicating a small trade-off between generalization and in-distribution precision.
+
+        \item \textbf{Intuitive explanation:}
+        The synonym replacement augmentation introduces more lexical diversity during training (e.g., replacing “movie” with “film”), which prevents overfitting to specific word forms and improves tolerance to unseen synonyms or paraphrases. Yet, since WordNet synonyms are not always contextually appropriate, some replacements introduce noise, reducing accuracy on clean data while modestly helping OOD robustness.
+
+        \item \textbf{Limitation:}
+        This augmentation is purely lexical and context-free—it replaces words without considering sentence semantics. It cannot simulate more complex real-world variations such as paraphrasing, reordering, typos, or domain shifts. Furthermore, some WordNet synonyms are semantically ambiguous (“mad” → “crazy” vs. “angry”), potentially altering sentiment polarity and introducing label noise.
+    \end{itemize}
+    
+\section*{Part II. Q4}
+% 
+% \section{Data Statistics and Processing (8pt)}
+
+
+\begin{table}[h!]
+\centering
+\begin{tabular}{lcc}
+\toprule
+Statistics Name & Train & Dev \\
+\midrule
+Number of examples & \textcolor{gray}{XXX} & \textcolor{gray}{XXX} \\
+Mean sentence length & \textcolor{gray}{XXX}& \textcolor{gray}{XXX} \\
+Mean SQL query length & \textcolor{gray}{XXX}& \textcolor{gray}{XXX}  \\
+Vocabulary size (natural language)& \textcolor{gray}{XXX}& \textcolor{gray}{XXX}  \\
+Vocabulary size (SQL)& \textcolor{gray}{XXX}& \textcolor{gray}{XXX}  \\
+\bottomrule
+\end{tabular}
+\caption{Data statistics before any pre-processing. \textcolor{gray}{You need to at least provide the statistics listed above, and can add new entries.}}
+\label{tab:data_stats_before}
+\end{table}
+
+\begin{table}[h!]
+\centering
+\begin{tabular}{lcc}
+\toprule
+Statistics Name & Train & Dev \\
+\midrule
+\multicolumn{3}{l}{\textbf{T5 fine-tuned model}} \\ % \textcolor{gray}{(T5 fine-tuning or T5 from scratch)}} \\
+\textcolor{gray}{Statistics Name} & \textcolor{gray}{XXX}& \textcolor{gray}{XXX} \\
+\midrule
+\bottomrule
+\end{tabular}
+\caption{Data statistics after pre-processing. \textcolor{gray}{You need to at least provide the statistics listed in \autoref{tab:data_stats_before} (except for the number of lines), and can add new entries.}}
+\label{tab:data_stats_after}
+\end{table}
+
+
+
+\newpage
+
+
+
+
+\section*{Q5}\label{sec:t5}
+
+
+\begin{table}[h!]
+\centering
+\begin{tabular}{p{3.5cm}p{10cm}}
+\toprule
+Design choice & Description \\
+\midrule
+Data processing & \textcolor{gray}{Describe the data processing steps you undertook, if any.} \\
+Tokenization & \textcolor{gray}{Describe how you did the tokenization for the inputs to the encoder and decoder. If you use anything else than the default T5 tokenizer, specify what you use, and why you choose to use it.} \\
+Architecture & \textcolor{gray}{Describe the components in the T5 architecture that you chose to fine-tune. Did you fine-tune the entire model, specific layers?} \\
+Hyperparameters & \textcolor{gray}{List the key hyperparameters that you used, including the learning rate, batch size, and stopping criteria.} \\
+\bottomrule
+\end{tabular}
+\caption{Details of the best-performing T5 model configurations (fine-tuned)}
+\label{tab:t5_results_ft}
+\end{table}
+
+
+
+
+
+
+
+\section*{Q6. }
+
+\paragraph{Quantitative Results:} 
+\begin{table}[h!]
+\centering
+\begin{tabular}{lcc}
+  \toprule
+  System & Query EM & F1 score\\
+  \midrule
+  \multicolumn{3}{l}{\textbf{Dev Results}} \\
+  \midrule
+  
+  \multicolumn{3}{l}{\textbf{T5 fine-tuned}} \\
+  Full model & XX.XX & XX.XX \\[5pt]
+  % Variant1 & XX.XX & XX.XX \\
+  % Variant2 & XX.XX & XX.XX \\
+  % Variant3 & XX.XX & XX.XX \\
+  
+  \midrule
+  \multicolumn{3}{l}{\textbf{Test Results}} \\
+  \midrule
+  T5 fine-tuning & XX.XX & XX.XX \\
+  \bottomrule
+\end{tabular}  
+\caption{Development and test results. \textcolor{gray}{Use this table to report quantitative results for both dev and test results.}}
+\label{tab:results}
+\end{table}
+
+
+\paragraph{Qualitative Error Analysis:} 
+
+
+\begin{landscape}
+\begin{table}
+  \centering
+  \begin{tabular}{p{2cm}p{6cm}p{6cm}p{6cm}}
+    \toprule
+    \textbf{Error Type}& \textbf{Example Of Error} & \textbf{Error Description} & \textbf{Statistics} \\
+    \midrule
+    \textcolor{gray}{Error name}  & \textcolor{gray}{Snippet from datapoint examplifying error} & \textcolor{gray}{Describe the error in natural language} & \textcolor{gray}{Provide statistics in the form ``COUNT/TOTAL'' on the prevalence of the error. TOTAL is the number of relevant examples (e.g. number of queries, for query-level error), and COUNT is the number of examples that showed this error.}  \\
+    
+    \midrule
+    &  &   & \\
+    \bottomrule
+  \end{tabular}
+  \label{tab:qualitative}
+  \caption{Use this table for your qualitative analysis on the dev set.}\label{tab:qualitative}
+\end{table}
+\end{landscape}
+
+\section*{Q7.}
+
+Provide a link to a google drive which contains a model checkpoint used to generate outputs you have submitted. 
+\textcolor{gray}{TODO}
+
+\section*{Extra Credit: }
+
+If you are doing extra credit assignment, please describe your system here, as well as provide a link to a google drive which contains a model checkpoint used to generate outputs you have submitted. 
+\textcolor{gray}{Optional TODO}
+\end{document}
